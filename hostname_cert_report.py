@@ -56,21 +56,15 @@ def get_cert_sha256_fingerprint(hostname: str, port: int, timeout: float) -> tup
                 if not cert_der:
                     return None, "no peer certificate presented"
                 digest = hashlib.sha256(cert_der).hexdigest().upper()
-                return digest, None
+                pretty = ":".join(digest[i : i + 2] for i in range(0, len(digest), 2))
+                return pretty, None
     except Exception as exc:  # noqa: BLE001
         return None, str(exc)
 
 
 def inspect_host(hostname: str, port: int, timeout: float) -> HostReport:
     a_records, aaaa_records = resolve_records(hostname)
-
-    fingerprint: str | None = None
-    cert_error: str | None = None
-    if a_records or aaaa_records:
-        fingerprint, cert_error = get_cert_sha256_fingerprint(hostname, port=port, timeout=timeout)
-    else:
-        cert_error = "hostname did not resolve to A or AAAA records"
-
+    fingerprint, cert_error = get_cert_sha256_fingerprint(hostname, port=port, timeout=timeout)
     return HostReport(
         hostname=hostname,
         a_records=a_records,
