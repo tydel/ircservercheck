@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import ipaddress
 import socket
 import ssl
 import sys
@@ -37,6 +38,18 @@ def resolve_records(hostname: str) -> tuple[list[str], list[str]]:
 
     try:
         for result in socket.getaddrinfo(hostname, None, socket.AF_INET6, socket.SOCK_STREAM):
+            raw_addr = result[4][0]
+            try:
+                ip = ipaddress.ip_address(raw_addr)
+            except ValueError:
+                continue
+
+            if isinstance(ip, ipaddress.IPv6Address) and ip.ipv4_mapped is not None:
+                a_records.append(str(ip.ipv4_mapped))
+                continue
+
+            if isinstance(ip, ipaddress.IPv6Address):
+                aaaa_records.append(ip.compressed)
             aaaa_records.append(result[4][0])
     except socket.gaierror:
         pass
